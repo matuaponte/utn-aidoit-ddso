@@ -3,19 +3,19 @@ export class UsuarioRepository {
     this.usuarios = [];
   }
 
-  findAll() {
+  async findAll() {
     return this.usuarios;
   }
 
-  findById(id) {
+  async findById(id) {
     return this.usuarios.find((u) => u.id === id);
   }
 
-  findByEmail(email) {
+  async findByEmail(email) {
     return this.usuarios.find((u) => u.email === email);
   }
 
-  save(usuario) {
+  async save(usuario) {
     const index = this.usuarios.findIndex((u) => u.id === usuario.id);
     if (index !== -1) {
       this.usuarios[index] = usuario;

@@ -7,6 +7,7 @@ import categoriaRoutes from './routes/categoriaRoutes.js';
 import gigRoutes from './routes/gigRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
 import seedRoutes from './routes/seedRoutes.js';
+import { seedService } from './services/SeedService.js';
 
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorLogger } from './middleware/errorLogger.js';
@@ -32,8 +33,17 @@ app.use(notFoundHandler);
 app.use(errorLogger);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🚀 AI Do It Backend corriendo en http://localhost:${PORT}`);
+  
+  // Poblar automáticamente la base en memoria al iniciar
+  try {
+    await seedService.execute();
+    console.log('✅ Base de datos en memoria poblada automáticamente (Seed).');
+  } catch (error) {
+    console.error('❌ Error al ejecutar el seed inicial:', error);
+  }
+
   console.log(`📋 Endpoints disponibles:`);
   console.log(`   POST   /api/seed`);
   console.log(`   POST   /api/auth/login`);

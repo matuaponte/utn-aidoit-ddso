@@ -3,29 +3,29 @@ export class PedidoRepository {
     this.pedidos = [];
   }
 
-  findAll() {
+  async findAll() {
     return this.pedidos;
   }
 
-  findById(id) {
+  async findById(id) {
     return this.pedidos.find((p) => p.id === id);
   }
 
-  findAllByCliente(clienteId) {
+  async findAllByCliente(clienteId) {
     return this.pedidos.filter((p) => p.clienteId === clienteId);
   }
 
-  findByClienteWithPagination(clienteId, page = 1, limit = 10) {
-    const resultado = this.findAllByCliente(clienteId);
-    return this._paginar(resultado, page, limit);
+  async findByClienteWithPagination(clienteId, page = 1, limit = 10) {
+    const resultado = await this.findAllByCliente(clienteId);
+    return this.#_paginar(resultado, page, limit);
   }
 
-  findAllByGigIds(gigIds) {
+  async findAllByGigIds(gigIds) {
     return this.pedidos.filter((p) => gigIds.includes(p.gigId));
   }
 
-  findByGigsWithPagination(gigIds, gigIdFiltro, page = 1, limit = 10) {
-    let resultado = this.findAllByGigIds(gigIds);
+  async findByGigsWithPagination(gigIds, gigIdFiltro, page = 1, limit = 10) {
+    let resultado = await this.findAllByGigIds(gigIds);
     if (gigIdFiltro) {
       resultado = resultado.filter((p) => p.gigId === parseInt(gigIdFiltro));
     }
@@ -52,7 +52,7 @@ export class PedidoRepository {
 
 
 
-  save(pedido) {
+  async save(pedido) {
     const index = this.pedidos.findIndex((p) => p.id === pedido.id);
     if (index !== -1) {
       this.pedidos[index] = pedido;

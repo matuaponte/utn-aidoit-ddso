@@ -1,21 +1,25 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../middleware/authMiddleware.js';
-import { BadRequestError, UnauthorizedError, ConflictError } from '../errors/AppError.js';
+import { BadRequestError, UnauthorizedError, ConflictError, NotFoundError } from '../errors/AppError.js';
 import { Usuario } from '../models/Usuario.js';
 import { usuarioRepository } from '../repositories/UsuarioRepository.js';
 import { getNextId } from '../utils/IdGenerator.js';
 
 export class AuthService {
-  login(email, password) {
+  async login(email, password) {
     if (!email || !password) {
       throw new BadRequestError('Email y password son obligatorios');
     }
 
-    const usuario = usuarioRepository.findByEmail(email);
+    const usuario = await usuarioRepository.findByEmail(email);
 
-    if (!usuario || !bcrypt.compareSync(password, usuario.password)) {
-      throw new UnauthorizedError('Credenciales inválidas');
+    if (!usuario) {
+      throw new NotFoundError('No existe un usuario con ese email');
+    }
+
+    if (!bcrypt.compareSync(password, usuario.password)) {
+      throw new UnauthorizedError('Contraseña incorrecta');
     }
 
     const token = jwt.sign(
@@ -28,12 +32,12 @@ export class AuthService {
     return { token, usuario: usuarioSinPassword };
   }
 
-  register(nombre, apellido, email, password) {
+  async register(nombre, apellido, email, password) {
     if (!nombre || !apellido || !email || !password) {
       throw new BadRequestError('Todos los campos son obligatorios');
     }
 
-    const existente = usuarioRepository.findByEmail(email);
+    const existente = await usuarioRepository.findByEmail(email);
     if (existente) {
       throw new ConflictError('Ya existe un usuario con ese email');
     }
@@ -48,7 +52,7 @@ export class AuthService {
       passwordHasheado
     );
 
-    usuarioRepository.save(nuevoUsuario);
+    await usuarioRepository.save(nuevoUsuario);
 
     const token = jwt.sign(
       { id: nuevoUsuario.id, email: nuevoUsuario.email },
@@ -58,6 +62,31 @@ export class AuthService {
 
     const { password: _, ...usuarioSinPassword } = nuevoUsuario;
     return { token, usuario: usuarioSinPassword };
+  }
+
+  async updateProfile(userId, nombre, apellido, passwordActual, passwordNueva) {
+    const usuario = await usuarioRepository.findById(userId);
+    if (!usuario) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    if (nombre) usuario.nombre = nombre;
+    if (apellido) usuario.apellido = apellido;
+
+    if (passwordNueva) {
+      if (!passwordActual) {
+        throw new BadRequestError('Debes ingresar tu contraseña actual para cambiarla');
+      }
+      if (!bcrypt.compareSync(passwordActual, usuario.password)) {
+        throw new UnauthorizedError('La contraseña actual es incorrecta');
+      }
+      usuario.password = bcrypt.hashSync(passwordNueva, 8);
+    }
+
+    await usuarioRepository.save(usuario);
+
+    const { password: _, ...usuarioSinPassword } = usuario;
+    return usuarioSinPassword;
   }
 }
 

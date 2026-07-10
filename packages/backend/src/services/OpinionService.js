@@ -7,9 +7,9 @@ import { gigRepository } from '../repositories/GigRepository.js';
 import { getNextId } from '../utils/IdGenerator.js';
 
 export class OpinionService {
-  crearOpinion(datos, pedidoId, usuarioId) {
+  async crearOpinion(datos, pedidoId, usuarioId) {
     const { puntuacion, detalle } = datos;
-    const pedido = pedidoRepository.findById(parseInt(pedidoId));
+    const pedido = await pedidoRepository.findById(parseInt(pedidoId));
 
     if (!pedido) {
       throw new NotFoundError('Pedido no encontrado');
@@ -23,7 +23,7 @@ export class OpinionService {
       throw new BadRequestError('Solo se puede opinar sobre pedidos entregados');
     }
 
-    const opinionExistente = opinionRepository.findByPedidoId(pedido.id);
+    const opinionExistente = await opinionRepository.findByPedidoId(pedido.id);
     if (opinionExistente) {
       throw new ConflictError('Ya dejaste una opinión para este pedido');
     }
@@ -37,26 +37,26 @@ export class OpinionService {
       detalle
     );
 
-    opinionRepository.save(nuevaOpinion);
+    await opinionRepository.save(nuevaOpinion);
 
     // Delegamos el recálculo a la clase de Dominio "Gig"
-    const gig = gigRepository.findById(pedido.gigId);
+    const gig = await gigRepository.findById(pedido.gigId);
     if (gig) {
-      const opinionesDelGig = opinionRepository.findAllByGigId(gig.id);
+      const opinionesDelGig = await opinionRepository.findAllByGigId(gig.id);
       gig.recalcularPuntajePromedio(opinionesDelGig);
-      gigRepository.save(gig);
+      await gigRepository.save(gig);
     }
 
     return nuevaOpinion;
   }
 
-  listarOpinionesPorGig(gigId, page = 1, limit = 10) {
-    const gig = gigRepository.findById(parseInt(gigId));
+  async listarOpinionesPorGig(gigId, page = 1, limit = 10) {
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) {
       throw new NotFoundError('Gig no encontrado');
     }
 
-    return opinionRepository.findAllByGigIdWithPagination(parseInt(gigId), page, limit);
+    return await opinionRepository.findAllByGigIdWithPagination(parseInt(gigId), page, limit);
   }
 }
 

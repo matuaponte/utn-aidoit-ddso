@@ -13,6 +13,16 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  // Manejo global de validaciones de Zod
+  if (err.name === 'ZodError') {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Error de validación de datos',
+      errors: err.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   return res.status(500).json({
     status: 'error',
     message: 'Error interno del servidor',

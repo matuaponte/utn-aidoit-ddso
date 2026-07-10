@@ -3,15 +3,15 @@ export class CategoriaRepository {
     this.categorias = [];
   }
 
-  findAll() {
+  async findAll() {
     return this.categorias;
   }
 
-  findById(id) {
+  async findById(id) {
     return this.categorias.find((c) => c.id === id);
   }
 
-  save(categoria) {
+  async save(categoria) {
     const index = this.categorias.findIndex((c) => c.id === categoria.id);
     if (index !== -1) {
       this.categorias[index] = categoria;

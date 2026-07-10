@@ -8,31 +8,33 @@ import { usuarioRepository } from '../repositories/UsuarioRepository.js';
 import { getNextId } from '../utils/IdGenerator.js';
 
 export class PedidoService {
-  listarPedidos(usuarioId, rol, gigIdFiltro, page = 1, limit = 10) {
+  async listarPedidos(usuarioId, rol, gigIdFiltro, page = 1, limit = 10) {
     let paginatedResult;
 
     if (rol === 'freelancer') {
-      const misGigs = gigRepository.findByVendedorId(usuarioId);
+      const misGigs = await gigRepository.findByVendedorId(usuarioId);
       const misGigIds = misGigs.map(g => g.id);
-      paginatedResult = pedidoRepository.findByGigsWithPagination(misGigIds, gigIdFiltro, page, limit);
+      paginatedResult = await pedidoRepository.findByGigsWithPagination(misGigIds, gigIdFiltro, page, limit);
     } else {
-      paginatedResult = pedidoRepository.findByClienteWithPagination(usuarioId, page, limit);
+      paginatedResult = await pedidoRepository.findByClienteWithPagination(usuarioId, page, limit);
     }
+
+    const dataConDTO = await Promise.all(paginatedResult.data.map(p => this.#_construirPedidoDTO(p)));
 
     return {
       ...paginatedResult,
-      data: paginatedResult.data.map(p => this.#_construirPedidoDTO(p))
+      data: dataConDTO
     };
   }
 
-  crearPedido(datos, clienteId) {
+  async crearPedido(datos, clienteId) {
     const { gigId, paqueteId, requerimientos } = datos;
 
     if (!gigId || !paqueteId) {
       throw new BadRequestError('gigId y paqueteId son obligatorios');
     }
 
-    const gig = gigRepository.findById(parseInt(gigId));
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) {
       throw new NotFoundError('Gig no encontrado');
     }
@@ -55,17 +57,17 @@ export class PedidoService {
       requerimientos || ''
     );
 
-    pedidoRepository.save(nuevoPedido);
-    return this.#_construirPedidoDTO(nuevoPedido);
+    await pedidoRepository.save(nuevoPedido);
+    return await this.#_construirPedidoDTO(nuevoPedido);
   }
 
-  cambiarEstado(pedidoId, nuevoEstado, usuarioId) {
-    const pedido = pedidoRepository.findById(parseInt(pedidoId));
+  async cambiarEstado(pedidoId, nuevoEstado, usuarioId) {
+    const pedido = await pedidoRepository.findById(parseInt(pedidoId));
     if (!pedido) {
       throw new NotFoundError('Pedido no encontrado');
     }
 
-    const gigAsociado = gigRepository.findById(pedido.gigId);
+    const gigAsociado = await gigRepository.findById(pedido.gigId);
     if (!gigAsociado) {
       throw new NotFoundError('Gig no encontrado');
     }
@@ -90,16 +92,16 @@ export class PedidoService {
     // Lógica de Dominio (Máquina de estados)
     pedido.actualizarEstado(nuevoEstado, usuarioId);
 
-    pedidoRepository.save(pedido);
-    return this.#_construirPedidoDTO(pedido);
+    await pedidoRepository.save(pedido);
+    return await this.#_construirPedidoDTO(pedido);
   }
 
-  obtenerPedidoPorId(pedidoId, usuarioId) {
-    const pedido = pedidoRepository.findById(parseInt(pedidoId));
+  async obtenerPedidoPorId(pedidoId, usuarioId) {
+    const pedido = await pedidoRepository.findById(parseInt(pedidoId));
     if (!pedido) {
       throw new NotFoundError('Pedido no encontrado');
     }
-    const pedidoPopulado = this.#_construirPedidoDTO(pedido);
+    const pedidoPopulado = await this.#_construirPedidoDTO(pedido);
 
     const esCliente = usuarioId === pedidoPopulado.clienteId;
     const esFreelancer = pedidoPopulado.gig && usuarioId === pedidoPopulado.gig.vendedorId;
@@ -113,13 +115,13 @@ export class PedidoService {
 
   // --- Subdominio: Mensajes ---
 
-  listarMensajes(pedidoId, usuarioId) {
-    const pedido = pedidoRepository.findById(parseInt(pedidoId));
+  async listarMensajes(pedidoId, usuarioId) {
+    const pedido = await pedidoRepository.findById(parseInt(pedidoId));
     if (!pedido) {
       throw new NotFoundError('Pedido no encontrado');
     }
 
-    const gig = gigRepository.findById(pedido.gigId);
+    const gig = await gigRepository.findById(pedido.gigId);
     const esCliente = usuarioId === pedido.clienteId;
     const esFreelancer = gig && usuarioId === gig.vendedorId;
 
@@ -130,8 +132,8 @@ export class PedidoService {
     return pedido.mensajes;
   }
 
-  enviarMensaje(pedidoId, textoMensaje, usuarioId) {
-    const pedido = pedidoRepository.findById(parseInt(pedidoId));
+  async enviarMensaje(pedidoId, textoMensaje, usuarioId) {
+    const pedido = await pedidoRepository.findById(parseInt(pedidoId));
     if (!pedido) {
       throw new NotFoundError('Pedido no encontrado');
     }
@@ -140,7 +142,7 @@ export class PedidoService {
       throw new BadRequestError('El mensaje no puede estar vacío');
     }
 
-    const gig = gigRepository.findById(pedido.gigId);
+    const gig = await gigRepository.findById(pedido.gigId);
     const esCliente = usuarioId === pedido.clienteId;
     const esFreelancer = gig && usuarioId === gig.vendedorId;
 
@@ -157,23 +159,29 @@ export class PedidoService {
     // Método de dominio
     pedido.agregarMensaje(nuevoMensaje);
 
-    pedidoRepository.save(pedido);
+    await pedidoRepository.save(pedido);
     return nuevoMensaje;
   }
 
   // --- Helpers Privados ---
-  #_construirPedidoDTO(pedido) {
-    const gig = gigRepository.findById(pedido.gigId);
-    const cliente = usuarioRepository.findById(pedido.clienteId);
+  async #_construirPedidoDTO(pedido) {
+    const gig = await gigRepository.findById(pedido.gigId);
+    const cliente = await usuarioRepository.findById(pedido.clienteId);
+    const freelancer = gig ? await usuarioRepository.findById(gig.vendedorId) : null;
     const paquete = gig ? gig.paquetes.find(p => p.id === pedido.paqueteId) : null;
+    const fechaCreacion = pedido.historialEstados && pedido.historialEstados.length > 0 ? pedido.historialEstados[0].fecha : new Date();
 
     return {
       ...pedido,
       estado: pedido.estado,
       diasRestantes: pedido.calcularDiasRestantes(paquete ? paquete.diasEntrega : null),
-      gig: gig ? { id: gig.id, nombre: gig.nombre, vendedorId: gig.vendedorId } : null,
-      paqueteInfo: paquete,
-      cliente: cliente ? { id: cliente.id, nombre: cliente.nombre } : null
+      gig: gig ? { id: gig.id, titulo: gig.nombre, vendedorId: gig.vendedorId } : null,
+      paquete: paquete,
+      cliente: cliente ? { id: cliente.id, nombre: cliente.nombre, apellido: cliente.apellido } : null,
+      freelancer: freelancer ? { id: freelancer.id, nombre: freelancer.nombre, apellido: freelancer.apellido } : null,
+      freelancerId: gig ? gig.vendedorId : null,
+      precioAcordado: pedido.total,
+      fechaCreacion: fechaCreacion
     };
   }
 }

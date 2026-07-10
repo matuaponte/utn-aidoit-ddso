@@ -3,24 +3,24 @@ export class OpinionRepository {
     this.opiniones = [];
   }
 
-  findAll() {
+  async findAll() {
     return this.opiniones;
   }
 
-  findById(id) {
+  async findById(id) {
     return this.opiniones.find((o) => o.id === id);
   }
 
-  findByPedidoId(pedidoId) {
+  async findByPedidoId(pedidoId) {
     return this.opiniones.find((o) => o.pedidoId === pedidoId);
   }
 
-  findAllByGigId(gigId) {
+  async findAllByGigId(gigId) {
     return this.opiniones.filter((o) => o.gigId === gigId);
   }
 
-  findAllByGigIdWithPagination(gigId, page = 1, limit = 10) {
-    const resultado = this.findAllByGigId(gigId);
+  async findAllByGigIdWithPagination(gigId, page = 1, limit = 10) {
+    const resultado = await this.findAllByGigId(gigId);
     return this.#_paginar(resultado, page, limit);
   }
 
@@ -42,7 +42,7 @@ export class OpinionRepository {
     };
   }
 
-  save(opinion) {
+  async save(opinion) {
     const index = this.opiniones.findIndex((o) => o.id === opinion.id);
     if (index !== -1) {
       this.opiniones[index] = opinion;

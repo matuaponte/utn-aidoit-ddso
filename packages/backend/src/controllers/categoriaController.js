@@ -1,5 +1,9 @@
 import { categoriaRepository } from '../repositories/CategoriaRepository.js';
 
-export function listar(req, res) {
-  res.json(categoriaRepository.findAll());
+export async function listar(req, res, next) {
+  try {
+    res.json(await categoriaRepository.findAll());
+  } catch (error) {
+    next(error);
+  }
 }

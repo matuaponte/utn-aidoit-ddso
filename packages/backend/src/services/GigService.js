@@ -8,25 +8,26 @@ import { opinionRepository } from '../repositories/OpinionRepository.js';
 import { getNextId } from '../utils/IdGenerator.js';
 
 export class GigService {
-  listarGigs(filtros) {
-    const paginatedResult = gigRepository.findWithFiltersAndPagination(filtros);
+  async listarGigs(filtros) {
+    const paginatedResult = await gigRepository.findWithFiltersAndPagination(filtros);
 
     // Devolvemos populados manteniendo la metadata de paginación
+    const dataConDTO = await Promise.all(paginatedResult.data.map(g => this.#_construirGigDTO(g)));
     return {
       ...paginatedResult,
-      data: paginatedResult.data.map(g => this.#_construirGigDTO(g))
+      data: dataConDTO
     };
   }
 
-  obtenerGigPorId(id) {
-    const gig = gigRepository.findById(id);
+  async obtenerGigPorId(id) {
+    const gig = await gigRepository.findById(id);
     if (!gig) {
       throw new NotFoundError('Gig no encontrado');
     }
-    return this.#_construirGigDTO(gig);
+    return await this.#_construirGigDTO(gig);
   }
 
-  crearGig(datos, vendedorId) {
+  async crearGig(datos, vendedorId) {
     const { nombre, descripcion, categoriaId, paquetes, multimedia } = datos;
 
     if (!nombre || !descripcion || !categoriaId) {
@@ -37,7 +38,7 @@ export class GigService {
       throw new BadRequestError('Debe incluir al menos un paquete');
     }
 
-    const categoria = categoriaRepository.findById(parseInt(categoriaId));
+    const categoria = await categoriaRepository.findById(parseInt(categoriaId));
     if (!categoria) {
       throw new NotFoundError('Categoría no encontrada');
     }
@@ -65,14 +66,14 @@ export class GigService {
       multimedia.forEach(url => nuevoGig.agregarMultimedia(url));
     }
 
-    gigRepository.save(nuevoGig);
-    return this.#_construirGigDTO(nuevoGig);
+    await gigRepository.save(nuevoGig);
+    return await this.#_construirGigDTO(nuevoGig);
   }
 
   // --- Subdominio: Paquetes y Multimedia ---
 
-  agregarPaquete(gigId, datosPaquete, vendedorId) {
-    const gig = gigRepository.findById(parseInt(gigId));
+  async agregarPaquete(gigId, datosPaquete, vendedorId) {
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) throw new NotFoundError('Gig no encontrado');
     if (gig.vendedorId !== vendedorId) throw new ForbiddenError('No sos el dueño de este Gig');
 
@@ -85,12 +86,12 @@ export class GigService {
     );
 
     gig.agregarPaquete(nuevoPaquete);
-    gigRepository.save(gig);
-    return this.#_construirGigDTO(gig);
+    await gigRepository.save(gig);
+    return await this.#_construirGigDTO(gig);
   }
 
-  eliminarPaquete(gigId, paqueteId, vendedorId) {
-    const gig = gigRepository.findById(parseInt(gigId));
+  async eliminarPaquete(gigId, paqueteId, vendedorId) {
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) throw new NotFoundError('Gig no encontrado');
     if (gig.vendedorId !== vendedorId) throw new ForbiddenError('No sos el dueño de este Gig');
 
@@ -99,41 +100,43 @@ export class GigService {
     }
 
     gig.eliminarPaquete(parseInt(paqueteId));
-    gigRepository.save(gig);
-    return this.#_construirGigDTO(gig);
+    await gigRepository.save(gig);
+    return await this.#_construirGigDTO(gig);
   }
 
-  agregarMultimedia(gigId, url, vendedorId) {
-    const gig = gigRepository.findById(parseInt(gigId));
+  async agregarMultimedia(gigId, url, vendedorId) {
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) throw new NotFoundError('Gig no encontrado');
     if (gig.vendedorId !== vendedorId) throw new ForbiddenError('No sos el dueño de este Gig');
 
     if (!url) throw new BadRequestError('La URL es obligatoria');
 
     gig.agregarMultimedia(url);
-    gigRepository.save(gig);
-    return this.#_construirGigDTO(gig);
+    await gigRepository.save(gig);
+    return await this.#_construirGigDTO(gig);
   }
 
-  eliminarMultimedia(gigId, url, vendedorId) {
-    const gig = gigRepository.findById(parseInt(gigId));
+  async eliminarMultimedia(gigId, url, vendedorId) {
+    const gig = await gigRepository.findById(parseInt(gigId));
     if (!gig) throw new NotFoundError('Gig no encontrado');
     if (gig.vendedorId !== vendedorId) throw new ForbiddenError('No sos el dueño de este Gig');
 
     gig.eliminarMultimedia(url);
-    gigRepository.save(gig);
-    return this.#_construirGigDTO(gig);
+    await gigRepository.save(gig);
+    return await this.#_construirGigDTO(gig);
   }
 
   // --- Helpers Privados ---
-  #_construirGigDTO(gig) {
-    const categoria = categoriaRepository.findById(gig.categoriaId);
-    const vendedor = usuarioRepository.findById(gig.vendedorId);
+  async #_construirGigDTO(gig) {
+    const categoria = await categoriaRepository.findById(gig.categoriaId);
+    const vendedor = await usuarioRepository.findById(gig.vendedorId);
+    const opiniones = await opinionRepository.findAllByGigId(gig.id);
 
     return {
       ...gig,
       categoria: categoria ? { id: categoria.id, nombre: categoria.nombre } : null,
-      vendedor: vendedor ? { id: vendedor.id, nombre: vendedor.nombre, apellido: vendedor.apellido } : null
+      vendedor: vendedor ? { id: vendedor.id, nombre: vendedor.nombre, apellido: vendedor.apellido } : null,
+      cantidadOpiniones: opiniones.length
     };
   }
 }

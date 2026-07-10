@@ -3,19 +3,19 @@ export class GigRepository {
     this.gigs = [];
   }
 
-  findAll() {
+  async findAll() {
     return this.gigs;
   }
 
-  findById(id) {
+  async findById(id) {
     return this.gigs.find((g) => g.id === id);
   }
 
-  findByVendedorId(vendedorId) {
+  async findByVendedorId(vendedorId) {
     return this.gigs.filter((g) => g.vendedorId === vendedorId);
   }
 
-  findWithFiltersAndPagination(filtros) {
+  async findWithFiltersAndPagination(filtros) {
     const { q, categoriaId, ordenar, puntajeMinimo, page = 1, limit = 10 } = filtros;
     let resultado = [...this.gigs];
 
@@ -93,7 +93,7 @@ export class GigRepository {
   }
 
 
-  save(gig) {
+  async save(gig) {
     const index = this.gigs.findIndex((g) => g.id === gig.id);
     if (index !== -1) {
       this.gigs[index] = gig;

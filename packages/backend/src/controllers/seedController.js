@@ -1,6 +1,10 @@
 import { seedService } from '../services/SeedService.js';
 
-export function seed(req, res) {
-  const result = seedService.execute();
-  res.json(result);
+export async function seed(req, res, next) {
+  try {
+    const result = await seedService.execute();
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
 }

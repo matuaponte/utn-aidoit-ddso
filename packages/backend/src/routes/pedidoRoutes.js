@@ -1,6 +1,5 @@
 import express from 'express';
-import { listar, obtenerPorId, crear, cambiarEstado } from '../controllers/pedidoController.js';
-import { listar as listarMensajes, enviar as enviarMensaje } from '../controllers/mensajeController.js';
+import { listar, obtenerPorId, crear, cambiarEstado, listarMensajes, enviarMensaje } from '../controllers/pedidoController.js';
 import { crear as crearOpinion } from '../controllers/opinionController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
