@@ -56,7 +56,23 @@ export class OpinionService {
       throw new NotFoundError('Gig no encontrado');
     }
 
-    return await opinionRepository.findAllByGigIdWithPagination(parseInt(gigId), page, limit);
+    const paginated = await opinionRepository.findAllByGigIdWithPagination(parseInt(gigId), page, limit);
+    
+    // Populating cliente
+    const { usuarioRepository } = await import('../repositories/UsuarioRepository.js');
+    for (const opinion of paginated.data) {
+      const u = await usuarioRepository.findById(opinion.clienteId);
+      // Solo enviamos datos publicos basicos
+      if (u) {
+        opinion.usuario = {
+          id: u.id,
+          nombre: u.nombre,
+          apellido: u.apellido
+        };
+      }
+    }
+    
+    return paginated;
   }
 }
 

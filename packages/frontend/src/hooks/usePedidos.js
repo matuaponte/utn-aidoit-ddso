@@ -1,12 +1,23 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import apiClient from '../api/apiClient';
 
-export function usePedidos(rol, limit = 10, gigIdFiltro = null) {
+export function usePedidos(rol, estadoFiltro = 'Activos', limit = 10, gigIdFiltro = null) {
   return useInfiniteQuery({
-    queryKey: ['pedidos', rol, gigIdFiltro],
+    queryKey: ['pedidos', rol, gigIdFiltro, estadoFiltro],
     queryFn: async ({ pageParam = 1 }) => {
+      let estadoParam = null;
+      if (estadoFiltro === 'Activos') {
+        estadoParam = 'ACTIVOS';
+      } else if (estadoFiltro === 'En Revisión') {
+        estadoParam = 'REVISION';
+      } else if (estadoFiltro === 'Completados') {
+        estadoParam = 'ENTREGADO';
+      } else if (estadoFiltro === 'Cancelados') {
+        estadoParam = 'CANCELADO';
+      }
+
       const response = await apiClient.get('/pedidos', { 
-        params: { rol, page: pageParam, limit, gigId: gigIdFiltro } 
+        params: { rol, page: pageParam, limit, gigId: gigIdFiltro, estado: estadoParam } 
       });
       return response.data;
     },

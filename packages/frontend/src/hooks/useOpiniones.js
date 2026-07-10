@@ -5,8 +5,8 @@ export function useCrearOpinion() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ pedidoId, puntaje, comentario }) => {
-      const response = await apiClient.post(`/pedidos/${pedidoId}/opinion`, { puntaje, comentario });
+    mutationFn: async ({ pedidoId, puntuacion, detalle }) => {
+      const response = await apiClient.post(`/pedidos/${pedidoId}/opinion`, { puntuacion, detalle });
       return response.data;
     },
     onSuccess: (_, variables) => {

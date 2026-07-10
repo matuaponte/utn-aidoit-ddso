@@ -5,18 +5,19 @@ import { Mensaje } from '../models/Mensaje.js';
 import { pedidoRepository } from '../repositories/PedidoRepository.js';
 import { gigRepository } from '../repositories/GigRepository.js';
 import { usuarioRepository } from '../repositories/UsuarioRepository.js';
+import { opinionRepository } from '../repositories/OpinionRepository.js';
 import { getNextId } from '../utils/IdGenerator.js';
 
 export class PedidoService {
-  async listarPedidos(usuarioId, rol, gigIdFiltro, page = 1, limit = 10) {
+  async listarPedidos(usuarioId, rol, gigIdFiltro, estadoFiltro, page = 1, limit = 10) {
     let paginatedResult;
 
     if (rol === 'freelancer') {
       const misGigs = await gigRepository.findByVendedorId(usuarioId);
       const misGigIds = misGigs.map(g => g.id);
-      paginatedResult = await pedidoRepository.findByGigsWithPagination(misGigIds, gigIdFiltro, page, limit);
+      paginatedResult = await pedidoRepository.findByGigsWithPagination(misGigIds, gigIdFiltro, estadoFiltro, page, limit);
     } else {
-      paginatedResult = await pedidoRepository.findByClienteWithPagination(usuarioId, page, limit);
+      paginatedResult = await pedidoRepository.findByClienteWithPagination(usuarioId, estadoFiltro, page, limit);
     }
 
     const dataConDTO = await Promise.all(paginatedResult.data.map(p => this.#_construirPedidoDTO(p)));
@@ -84,6 +85,9 @@ export class PedidoService {
     }
     if (nuevoEstado === EstadoPedido.EN_REVISION && !esFreelancer) {
       throw new ForbiddenError('Solo el freelancer puede enviar a revisión');
+    }
+    if (nuevoEstado === EstadoPedido.PENDIENTE_CAMBIOS && !esCliente) {
+      throw new ForbiddenError('Solo el cliente puede solicitar cambios');
     }
     if (nuevoEstado === EstadoPedido.ENTREGADO && !esCliente) {
       throw new ForbiddenError('Solo el cliente puede aceptar la entrega');
@@ -171,6 +175,8 @@ export class PedidoService {
     const paquete = gig ? gig.paquetes.find(p => p.id === pedido.paqueteId) : null;
     const fechaCreacion = pedido.historialEstados && pedido.historialEstados.length > 0 ? pedido.historialEstados[0].fecha : new Date();
 
+    const opinion = await opinionRepository.findByPedidoId(pedido.id);
+
     return {
       ...pedido,
       estado: pedido.estado,
@@ -181,7 +187,8 @@ export class PedidoService {
       freelancer: freelancer ? { id: freelancer.id, nombre: freelancer.nombre, apellido: freelancer.apellido } : null,
       freelancerId: gig ? gig.vendedorId : null,
       precioAcordado: pedido.total,
-      fechaCreacion: fechaCreacion
+      fechaCreacion: fechaCreacion,
+      yaOpinado: !!opinion
     };
   }
 }

@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { lightTheme } from '../src/theme/theme';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { DrawerProvider } from '../src/context/DrawerContext';
+import { UIProvider } from '../src/context/UIContext';
 import SplashScreenComponent from '../src/components/SplashScreen';
 
 const queryClient = new QueryClient({
@@ -31,9 +32,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <PaperProvider theme={lightTheme}>
           <AuthProvider>
-            <DrawerProvider>
-              <RootLayoutNav />
-            </DrawerProvider>
+            <UIProvider>
+              <DrawerProvider>
+                <RootLayoutNav />
+              </DrawerProvider>
+            </UIProvider>
           </AuthProvider>
         </PaperProvider>
       </QueryClientProvider>

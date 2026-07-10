@@ -24,21 +24,3 @@ export async function register(req, res, next) {
   }
 }
 
-export async function getMe(req, res, next) {
-  try {
-    const { password, ...usuarioSinPassword } = req.usuario;
-    res.json(usuarioSinPassword);
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateMe(req, res, next) {
-  try {
-    const { nombre, apellido, passwordActual, passwordNueva } = req.body;
-    const result = await authService.updateProfile(req.usuario.id, nombre, apellido, passwordActual, passwordNueva);
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-}

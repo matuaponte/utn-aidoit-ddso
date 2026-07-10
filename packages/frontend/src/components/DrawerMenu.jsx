@@ -97,6 +97,17 @@ export default function DrawerMenu({ visible, onClose }) {
               <Text style={styles.menuText}>Canales de contacto</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.menuItem} onPress={() => { 
+              handleClose(); 
+              Alert.alert(
+                'Políticas de Cancelación', 
+                'En AI Do It protegemos a ambas partes.\n\nComo Cliente:\nPodés cancelar tu pedido en cualquier momento mientras esté en progreso o en revisión. Los fondos se reembolsarán a tu cuenta.\n\nComo Freelancer:\nSi un pedido es cancelado antes de la entrega, se revisará la actividad para evitar abusos. Si considerás que una cancelación fue injusta, contactá a soporte.'
+              ); 
+            }}>
+              <MaterialCommunityIcons name="shield-check-outline" size={24} color={theme.colors.primary} />
+              <Text style={styles.menuText}>Políticas de Cancelación</Text>
+            </TouchableOpacity>
+
             <Divider style={styles.divider} />
 
             <TouchableOpacity style={styles.menuItem} onPress={() => { handleClose(); Alert.alert('Apariencia', 'El modo oscuro estará disponible próximamente.'); }}>

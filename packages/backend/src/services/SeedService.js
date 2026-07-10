@@ -30,7 +30,7 @@ export class SeedService {
     await categoriaRepository.save(new Categoria(3, 'Marketing', 'Servicios de marketing digital y redes sociales'));
     await categoriaRepository.save(new Categoria(4, 'Redacción', 'Servicios de escritura, traducción y contenido'));
 
-    const passwordHasheado = bcrypt.hashSync('123456', 8);
+    const passwordHasheado = await bcrypt.hash('123456', 8);
 
     // Usuarios
     await usuarioRepository.save(new Usuario(1, 'Juan', 'Pérez', 'juan@mail.com', passwordHasheado));

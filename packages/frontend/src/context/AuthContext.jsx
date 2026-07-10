@@ -47,6 +47,15 @@ function authReducer(state, action) {
   }
 }
 
+const extractError = (error, defaultMsg) => {
+  const data = error.response?.data;
+  if (!data) return defaultMsg;
+  if (data.errors && data.errors.length > 0) {
+    return data.errors.map(e => e.message).join('\n');
+  }
+  return data.message || data.error || defaultMsg;
+};
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const queryClient = useQueryClient();
@@ -59,7 +68,7 @@ export function AuthProvider({ children }) {
         userToken = await SecureStore.getItemAsync(TOKEN_KEY);
         if (userToken) {
           // 2. Si hay token, pedimos los datos del usuario al backend (/me)
-          const response = await apiClient.get('/auth/me');
+          const response = await apiClient.get('/usuarios/me');
           dispatch({ type: 'RESTORE_TOKEN', payload: { token: userToken, user: response.data, sessionExpired: false } });
         } else {
           // No hay token guardado
@@ -89,7 +98,6 @@ export function AuthProvider({ children }) {
   const authContext = {
     ...state,
     login: async (email, password) => {
-      dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const response = await apiClient.post('/auth/login', { email, password });
         const { token, usuario } = response.data;
@@ -98,12 +106,10 @@ export function AuthProvider({ children }) {
         dispatch({ type: 'SIGN_IN', payload: { token, user: usuario } });
         return { success: true };
       } catch (error) {
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return { success: false, error: error.response?.data?.error || 'Error al iniciar sesión' };
+        return { success: false, error: extractError(error, 'Error al iniciar sesión') };
       }
     },
     register: async (nombre, apellido, email, password) => {
-      dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const response = await apiClient.post('/auth/register', { nombre, apellido, email, password });
         const { token, usuario } = response.data;
@@ -112,20 +118,17 @@ export function AuthProvider({ children }) {
         dispatch({ type: 'SIGN_IN', payload: { token, user: usuario } });
         return { success: true };
       } catch (error) {
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return { success: false, error: error.response?.data?.error || 'Error al registrarse' };
+        return { success: false, error: extractError(error, 'Error al registrarse') };
       }
     },
     updateProfile: async (nombre, apellido, passwordActual, passwordNueva) => {
-      dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const response = await apiClient.put('/auth/me', { nombre, apellido, passwordActual, passwordNueva });
+        const response = await apiClient.put('/usuarios/me', { nombre, apellido, passwordActual, passwordNueva });
         // The backend returns the updated user object
         dispatch({ type: 'RESTORE_TOKEN', payload: { token: state.token, user: response.data } });
         return { success: true };
       } catch (error) {
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return { success: false, error: error.response?.data?.error || 'Error al actualizar perfil' };
+        return { success: false, error: extractError(error, 'Error al actualizar perfil') };
       }
     },
     logout: async () => {

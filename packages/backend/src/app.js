@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 
 import authRoutes from './routes/authRoutes.js';
+import usuarioRoutes from './routes/usuarioRoutes.js';
 import categoriaRoutes from './routes/categoriaRoutes.js';
 import gigRoutes from './routes/gigRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/categorias', categoriaRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/pedidos', pedidoRoutes);
@@ -48,7 +50,8 @@ app.listen(PORT, async () => {
   console.log(`   POST   /api/seed`);
   console.log(`   POST   /api/auth/login`);
   console.log(`   POST   /api/auth/register`);
-  console.log(`   GET    /api/auth/me`);
+  console.log(`   GET    /api/usuarios/me`);
+  console.log(`   PUT    /api/usuarios/me`);
   console.log(`   GET    /api/categorias`);
   console.log(`   GET    /api/gigs`);
   console.log(`   GET    /api/gigs/:id`);

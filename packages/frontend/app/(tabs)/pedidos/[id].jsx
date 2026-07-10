@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Text, useTheme, TextInput, IconButton, Appbar, Card, Button } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePedidoDetail, useCambiarEstadoPedido, useMensajesPedido, useEnviarMensaje } from '../../../src/hooks/usePedidos';
@@ -7,6 +7,7 @@ import { useCrearOpinion } from '../../../src/hooks/useOpiniones';
 import { useAuth } from '../../../src/context/AuthContext';
 import ChatBubble from '../../../src/components/ChatBubble';
 import BottomModal from '../../../src/components/BottomModal';
+import OrderTimeline from '../../../src/components/OrderTimeline';
 
 export default function PedidoDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -40,7 +41,7 @@ export default function PedidoDetailScreen() {
   const { mutateAsync: actualizarEstado } = useCambiarEstadoPedido();
 
   // Obtener mensajes de este pedido
-  const { data: mensajes, isLoading: isLoadingMensajes } = useMensajesPedido(id);
+  const { data: mensajes, isLoading: isLoadingMensajes, isRefetching: isRefetchingMensajes, refetch: refetchMensajes } = useMensajesPedido(id);
   const { mutateAsync: enviarMensaje } = useEnviarMensaje(id);
 
   if (isLoadingPedidos) {
@@ -62,7 +63,7 @@ export default function PedidoDetailScreen() {
   const confirmarAccion = (estado) => {
     Alert.alert(
       'Confirmar Acción',
-      `¿Estás seguro de que deseas marcar este pedido como ${estado}?`,
+      `¿Estás seguro de que deseas marcar este pedido como ${estado.toLowerCase().replaceAll('_', ' ')}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { 
@@ -76,48 +77,64 @@ export default function PedidoDetailScreen() {
   };
 
   const renderActionBar = () => {
-    if (pedido.estado === 'CANCELADO' || pedido.estado === 'ENTREGADO') return null;
+    if (pedido.estado === 'CANCELADO') return null;
 
     if (isFreelancer) {
       if (pedido.estado === 'PENDIENTE') {
         return (
           <View style={styles.actionBar}>
-            <Button mode="contained" onPress={() => confirmarAccion('CONFIRMADO')} style={{flex:1, marginRight: 8}}>Aceptar</Button>
-            <Button mode="outlined" textColor={theme.colors.error} onPress={() => confirmarAccion('CANCELADO')} style={{flex:1}}>Rechazar</Button>
+            <Button accessibilityRole="button" accessibilityLabel="Aceptar pedido" mode="contained" onPress={() => confirmarAccion('CONFIRMADO')} style={{flex:1, marginRight: 8}}>Aceptar</Button>
+            <Button accessibilityRole="button" accessibilityLabel="Rechazar pedido" mode="outlined" textColor={theme.colors.error} onPress={() => confirmarAccion('CANCELADO')} style={{flex:1}}>Rechazar</Button>
           </View>
         );
       }
       if (pedido.estado === 'CONFIRMADO') {
         return (
           <View style={styles.actionBar}>
-            <Button mode="contained" onPress={() => confirmarAccion('EN_REVISION')} style={{flex:1}}>Entregar Trabajo</Button>
+            <Button accessibilityRole="button" accessibilityLabel="Entregar Trabajo" mode="contained" onPress={() => confirmarAccion('EN_REVISION')} style={{flex:1}}>Entregar Trabajo</Button>
+          </View>
+        );
+      }
+      if (pedido.estado === 'PENDIENTE_CAMBIOS') {
+        return (
+          <View style={styles.actionBar}>
+            <Button accessibilityRole="button" accessibilityLabel="Re-enviar Trabajo" mode="contained" onPress={() => confirmarAccion('EN_REVISION')} style={{flex:1}}>Re-enviar Trabajo</Button>
           </View>
         );
       }
     } else {
       // Si es Cliente
-      if (pedido.estado === 'EN_REVISION') {
-        return (
-          <View style={styles.actionBar}>
-            <Button mode="contained" onPress={() => confirmarAccion('ENTREGADO')} style={{flex:1, marginRight:8}}>Aprobar Entrega</Button>
-            <Button mode="outlined" onPress={() => confirmarAccion('CONFIRMADO')} style={{flex:1}}>Pedir Cambios</Button>
-          </View>
-        );
-      }
-      if (pedido.estado === 'PENDIENTE') {
-        return (
-          <View style={styles.actionBar}>
-            <Button mode="outlined" textColor={theme.colors.error} onPress={() => confirmarAccion('CANCELADO')} style={{flex:1}}>Cancelar Pedido</Button>
-          </View>
-        );
-      }
-      if (pedido.estado === 'ENTREGADO') {
-        return (
-          <View style={styles.actionBar}>
-            <Button mode="contained" onPress={() => setOpinionVisible(true)} style={{flex:1}}>Dejar Opinión</Button>
-          </View>
-        );
-      }
+      const showCancel = ['PENDIENTE', 'CONFIRMADO', 'EN_REVISION', 'PENDIENTE_CAMBIOS'].includes(pedido.estado);
+      const isRevision = pedido.estado === 'EN_REVISION';
+      const isEntregado = pedido.estado === 'ENTREGADO';
+
+      if (!showCancel && !isRevision && !isEntregado) return null;
+
+      return (
+        <View style={[styles.actionBar, { flexDirection: 'column', gap: 8 }]}>
+          {isRevision && (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Button accessibilityRole="button" accessibilityLabel="Aprobar Entrega" mode="contained" onPress={() => confirmarAccion('ENTREGADO')} style={{flex:1}}>Aprobar</Button>
+              <Button accessibilityRole="button" accessibilityLabel="Pedir cambios en la entrega" mode="outlined" onPress={() => confirmarAccion('PENDIENTE_CAMBIOS')} style={{flex:1}}>Pedir cambios</Button>
+            </View>
+          )}
+          {isEntregado && (
+            <Button 
+              accessibilityRole="button" 
+              accessibilityLabel={pedido.yaOpinado ? "Opinión ya enviada" : "Dejar una opinión sobre el trabajo"} 
+              mode={pedido.yaOpinado ? "outlined" : "contained"}
+              disabled={pedido.yaOpinado}
+              onPress={() => setOpinionVisible(true)} 
+              style={{width: '100%'}}
+            >
+              {pedido.yaOpinado ? "Opinión enviada" : "Dejar Opinión"}
+            </Button>
+          )}
+          {showCancel && (
+             <Button accessibilityRole="button" accessibilityLabel="Cancelar Pedido" mode="outlined" textColor={theme.colors.error} onPress={() => confirmarAccion('CANCELADO')} style={{width: '100%'}}>Cancelar Pedido</Button>
+          )}
+        </View>
+      );
     }
     return null;
   };
@@ -126,12 +143,14 @@ export default function PedidoDetailScreen() {
     <KeyboardAvoidingView 
       style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <Appbar.Header style={{ backgroundColor: '#FFF' }}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={`Pedido #${pedido.id}`} subtitle={pedido.estado} />
       </Appbar.Header>
+
+      <OrderTimeline estado={pedido.estado} />
 
       <Card style={styles.infoCard}>
         <Card.Content>
@@ -156,6 +175,15 @@ export default function PedidoDetailScreen() {
             )}
             inverted={true}
             contentContainerStyle={styles.chatList}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl 
+                refreshing={false} 
+                onRefresh={refetchMensajes}
+                colors={[theme.colors.primary]}
+                tintColor={theme.colors.primary}
+              />
+            }
           />
         )}
       </View>

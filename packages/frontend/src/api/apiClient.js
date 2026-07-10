@@ -23,9 +23,9 @@ function resolveBaseURL() {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  // Para que funcione en un iPhone físico o cualquier otro dispositivo en la red WiFi,
-  // necesitamos usar la IP local de la computadora (192.168.0.35) en lugar de localhost.
-  return 'http://192.168.0.35:3000/api';
+  // Para que funcione en un iPhone físico o cualquier otro dispositivo en la red WiFi o tethering,
+  // necesitamos usar la IP local de la computadora en lugar de localhost.
+  return 'http://172.20.10.10:3000/api';
 }
 
 const apiClient = axios.create({
@@ -87,11 +87,6 @@ apiClient.interceptors.response.use(
     // Si es un error de Zod de validación (400) con la estructura { errors: [{ path, message }] }
     if (error.response?.status === 400 && error.response?.data?.errors) {
       mensaje = error.response.data.errors.map(e => `${e.path}: ${e.message}`).join('\n');
-    }
-
-    // Mostramos la alerta global (excepto si es 401, que se maneja con redirección limpia)
-    if (error.response?.status !== 401) {
-      Alert.alert('Error', mensaje);
     }
       
     return Promise.reject({

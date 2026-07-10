@@ -3,11 +3,13 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { Text, TextInput, Button, HelperText, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { useUI } from '../../src/context/UIContext';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { register } = useAuth();
+  const { showError } = useUI();
 
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
@@ -22,14 +24,23 @@ export default function RegisterScreen() {
       setError('Por favor completá todos los campos.');
       return;
     }
-    
+    if (!email.includes('@')) {
+      setError('Por favor ingresá un formato de email válido.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     setError('');
     setLoading(true);
     
     const result = await register(nombre, apellido, email, password);
     
     if (!result.success) {
-      setError(result.error);
+      showError(result.error);
       setLoading(false);
     }
   };
@@ -37,11 +48,15 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.primary }]}>Crear Cuenta</Text>
+          <Text style={styles.title}>
+            <Text style={{ color: theme.colors.primary }}>AI</Text>
+            <Text style={{ color: theme.colors.onSurface }}> Do It</Text>
+          </Text>
           <Text style={styles.subtitle}>Unite a la red de AI Do It</Text>
         </View>
 
@@ -112,6 +127,7 @@ export default function RegisterScreen() {
             </Button>
           </View>
         </View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -124,8 +140,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 24,
+    paddingTop: 80,
   },
   header: {
     alignItems: 'center',

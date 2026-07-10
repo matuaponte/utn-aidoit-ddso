@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Image, KeyboardAvoidingView, Platform, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Image, KeyboardAvoidingView, Platform, Modal, Pressable, Dimensions } from 'react-native';
 import { Text, useTheme, Card, Avatar, Divider, Button, TextInput } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGigDetail, useGigOpiniones } from '../../../src/hooks/useGigs';
@@ -8,6 +8,8 @@ import BottomModal from '../../../src/components/BottomModal';
 import { useAuth } from '../../../src/context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { useUI } from '../../../src/context/UIContext';
+
 const DEFAULT_COVER = 'https://picsum.photos/seed/gig/800/400';
 
 export default function GigDetailScreen() {
@@ -15,6 +17,7 @@ export default function GigDetailScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user } = useAuth();
+  const { showSuccess, showError } = useUI();
 
   const { data: gig, isLoading: loadingGig, isError } = useGigDetail(id);
   const { data: opiniones, isLoading: loadingOpiniones } = useGigOpiniones(id);
@@ -25,6 +28,13 @@ export default function GigDetailScreen() {
   const [isCheckoutVisible, setCheckoutVisible] = React.useState(false);
   const [requerimientos, setRequerimientos] = React.useState('');
 
+  React.useEffect(() => {
+    if (gig?.paquetes?.length > 0 && !selectedPaquete) {
+      const cheapest = gig.paquetes.reduce((prev, curr) => (prev.precio < curr.precio ? prev : curr));
+      setSelectedPaquete(cheapest);
+    }
+  }, [gig]);
+
   const handleComprar = async () => {
     if (!selectedPaquete) return;
     try {
@@ -34,9 +44,10 @@ export default function GigDetailScreen() {
         requerimientos
       });
       setCheckoutVisible(false);
+      showSuccess('Pedido creado con éxito');
       router.replace('/pedidos'); // Ir a mis pedidos
     } catch (error) {
-      alert(error.response?.data?.message || 'Error al crear pedido');
+      showError(error.response?.data?.message || 'Error al crear pedido');
     }
   };
 
@@ -62,9 +73,22 @@ export default function GigDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header Cover */}
-        <Image source={{ uri: coverUrl }} style={styles.coverImage} />
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {/* Header Cover Carousel */}
+        <ScrollView 
+          horizontal 
+          pagingEnabled 
+          showsHorizontalScrollIndicator={false}
+          style={styles.carouselContainer}
+        >
+          {[1, 2, 3].map((num) => (
+            <Image 
+              key={num}
+              source={{ uri: `https://picsum.photos/seed/${gig.id}_${num}/800/400` }} 
+              style={styles.coverImage} 
+            />
+          ))}
+        </ScrollView>
 
         <View style={styles.content}>
           {/* Categoría y Título */}
@@ -145,20 +169,33 @@ export default function GigDetailScreen() {
           ) : opiniones && opiniones.data && opiniones.data.length > 0 ? (
             opiniones.data.map((op) => (
               <View key={op.id} style={styles.opinionContainer}>
-                <View style={styles.ratingRow}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <MaterialCommunityIcons 
-                      key={i} 
-                      name="star" 
-                      size={14} 
-                      color={i < op.puntuacion ? "#FFB300" : "#E0E0E0"} 
-                    />
-                  ))}
+                <View style={styles.opinionHeaderRow}>
+                  <Avatar.Text 
+                    size={32} 
+                    label={op.usuario ? op.usuario.nombre.substring(0, 2).toUpperCase() : '??'} 
+                    style={{ backgroundColor: theme.colors.primaryContainer }}
+                    labelStyle={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}
+                  />
+                  <View style={styles.opinionAuthorInfo}>
+                    <Text variant="labelLarge" style={{ fontWeight: 'bold' }}>
+                      {op.usuario ? `${op.usuario.nombre} ${op.usuario.apellido}` : 'Usuario'}
+                    </Text>
+                    <View style={styles.ratingRow}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <MaterialCommunityIcons 
+                          key={i} 
+                          name="star" 
+                          size={12} 
+                          color={i < op.puntuacion ? "#FFB300" : "#E0E0E0"} 
+                        />
+                      ))}
+                    </View>
+                  </View>
                 </View>
-                <Text variant="bodySmall" style={styles.opinionComentario}>{op.detalle}</Text>
                 <Text variant="labelSmall" style={styles.opinionFecha}>
                   {new Date(op.fecha).toLocaleDateString()}
                 </Text>
+                <Text variant="bodySmall" style={styles.opinionComentario}>{op.detalle}</Text>
               </View>
             ))
           ) : (
@@ -217,8 +254,8 @@ export default function GigDetailScreen() {
         </View>
 
         <View style={styles.modalActions}>
-          <Button mode="text" onPress={() => setCheckoutVisible(false)} disabled={isCreando}>Cancelar</Button>
-          <Button mode="contained" onPress={handleComprar} loading={isCreando} disabled={isCreando || !requerimientos.trim()}>
+          <Button accessibilityRole="button" accessibilityLabel="Cancelar pedido" mode="text" onPress={() => setCheckoutVisible(false)} disabled={isCreando}>Cancelar</Button>
+          <Button accessibilityRole="button" accessibilityLabel="Confirmar y pagar pedido" mode="contained" onPress={handleComprar} loading={isCreando} disabled={isCreando || !requerimientos.trim()}>
             Confirmar y Pagar
           </Button>
         </View>
@@ -240,8 +277,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+  carouselContainer: {
+    height: 240,
+  },
   coverImage: {
-    width: '100%',
+    width: Dimensions.get('window').width,
     height: 240,
     resizeMode: 'cover',
   },
@@ -264,6 +304,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 2,
+  },
+  opinionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  opinionAuthorInfo: {
+    marginLeft: 12,
+    flex: 1,
   },
   divider: {
     marginVertical: 24,

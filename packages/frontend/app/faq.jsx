@@ -20,7 +20,7 @@ export default function FAQScreen() {
             title="¿Cómo comprar un servicio?"
             left={props => <List.Icon {...props} icon="cart-outline" />}
           >
-            <List.Item titleNumberOfLines={4} title="Buscá el gig que te interesa en la pantalla Explorar, seleccioná un paquete (Básico, Estándar o Premium) y hacé clic en Continuar. Luego podrás enviar tus requerimientos." />
+            <List.Item titleNumberOfLines={5} title="Buscá el gig que te interesa en la pantalla Explorar, seleccioná un paquete (Básico, Estándar o Premium) y hacé clic en Continuar. Luego podrás enviar tus requerimientos." />
           </List.Accordion>
 
           <List.Accordion

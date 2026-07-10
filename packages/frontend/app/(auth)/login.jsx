@@ -3,6 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { Text, TextInput, Button, HelperText, useTheme } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { useUI } from '../../src/context/UIContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
@@ -10,17 +11,20 @@ export default function LoginScreen() {
   const { expired } = useLocalSearchParams();
   const theme = useTheme();
   const { login } = useAuth();
+  const { showError } = useUI();
 
-  const [email, setEmail] = useState('juan@mail.com'); // Valor por defecto del Seed
+  const [email, setEmail] = useState('juan@mail.com');
   const [password, setPassword] = useState('123456');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hidePassword, setHidePassword] = useState(true);
+
+  // Email format validation (simple regex)
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isFormValid = isEmailValid && password.length >= 6;
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Por favor completá todos los campos.');
-      return;
-    }
+    if (!isFormValid) return;
     
     setError('');
     setLoading(true);
@@ -28,7 +32,7 @@ export default function LoginScreen() {
     const result = await login(email, password);
     
     if (!result.success) {
-      setError(result.error);
+      showError(result.error);
       setLoading(false);
     }
     // Si tiene éxito, el useEffect en _layout.jsx redirigirá automáticamente
@@ -37,18 +41,22 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.primary }]}>AI Do It</Text>
+          <Text style={styles.title}>
+            <Text style={{ color: theme.colors.primary }}>AI</Text>
+            <Text style={{ color: theme.colors.onSurface }}> Do It</Text>
+          </Text>
           <Text style={styles.subtitle}>Tu plataforma de servicios freelance</Text>
         </View>
 
         <View style={styles.form}>
           {expired === 'true' && (
             <View style={styles.expiredBanner}>
-              <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#E65100" style={styles.bannerIcon} />
+              <MaterialCommunityIcons name="shield-alert-outline" size={20} color={theme.colors.error} style={styles.bannerIcon} />
               <Text style={styles.expiredText}>
                 Tu sesión ha expirado. Por favor, iniciá sesión nuevamente para continuar.
               </Text>
@@ -64,16 +72,21 @@ export default function LoginScreen() {
             keyboardType="email-address"
             style={styles.input}
             disabled={loading}
+            error={email.length > 0 && !isEmailValid}
           />
+          <HelperText type="error" visible={email.length > 0 && !isEmailValid} style={{ marginTop: -8 }}>
+            Formato de email inválido
+          </HelperText>
           
           <TextInput
             label="Contraseña"
             mode="outlined"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            secureTextEntry={hidePassword}
             style={styles.input}
             disabled={loading}
+            right={<TextInput.Icon icon={hidePassword ? "eye" : "eye-off"} onPress={() => setHidePassword(!hidePassword)} />}
           />
 
           {error ? (
@@ -86,6 +99,7 @@ export default function LoginScreen() {
             mode="contained" 
             onPress={handleLogin} 
             loading={loading}
+            disabled={loading || !isFormValid}
             style={styles.button}
             contentStyle={styles.buttonContent}
           >
@@ -103,6 +117,7 @@ export default function LoginScreen() {
             </Button>
           </View>
         </View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -115,8 +130,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 24,
+    paddingTop: 160,
   },
   header: {
     alignItems: 'center',

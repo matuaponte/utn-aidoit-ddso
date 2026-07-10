@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, Searchbar, Chip, useTheme, Menu, IconButton } from 'react-native-paper';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useGigs } from '../../../src/hooks/useGigs';
@@ -7,6 +7,8 @@ import { useCategorias } from '../../../src/hooks/useCategorias';
 import GigCard from '../../../src/components/GigCard';
 import { useDrawer } from '../../../src/context/DrawerContext';
 import { Image } from 'react-native';
+import SkeletonCard from '../../../src/components/SkeletonCard';
+import EmptyState from '../../../src/components/EmptyState';
 
 export default function ExplorarScreen() {
   const theme = useTheme();
@@ -32,7 +34,8 @@ export default function ExplorarScreen() {
   const { data: categoriasData } = useCategorias();
   const { 
     data: gigsData, 
-    isLoading, 
+    isLoading,
+    isRefetching,
     isFetchingNextPage, 
     fetchNextPage, 
     hasNextPage,
@@ -53,24 +56,35 @@ export default function ExplorarScreen() {
   const renderEmpty = () => {
     if (isLoading) {
       return (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+        <View style={{ padding: 16 }}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </View>
       );
     }
     if (isError) {
       return (
-        <View style={styles.centerContainer}>
-          <Text style={{ color: theme.colors.error }}>Ocurrió un error al cargar los Gigs.</Text>
-        </View>
+        <EmptyState 
+          icon="alert-circle-outline" 
+          title="Error de conexión" 
+          subtitle="Ocurrió un error al cargar los Gigs." 
+          actionLabel="Reintentar" 
+          onAction={() => refetch()} 
+        />
       );
     }
     return (
-      <View style={styles.centerContainer}>
-        <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-          No se encontraron servicios.
-        </Text>
-      </View>
+      <EmptyState 
+        icon="text-search" 
+        title="Sin resultados" 
+        subtitle="No se encontraron servicios que coincidan con tu búsqueda." 
+        actionLabel={searchQuery || categoriaId ? "Limpiar filtros" : null}
+        onAction={() => {
+          setSearchQuery('');
+          setCategoriaId(null);
+        }}
+      />
     );
   };
 
@@ -163,8 +177,14 @@ export default function ExplorarScreen() {
             <ActivityIndicator style={{ margin: 16 }} color={theme.colors.primary} />
           ) : null
         }
-        refreshing={isLoading}
-        onRefresh={refetch}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefetching} 
+            onRefresh={refetch}
+            colors={[theme.colors.primary]} // Android
+            tintColor={theme.colors.primary} // iOS
+          />
+        }
       />
     </View>
   );
@@ -178,7 +198,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   header: {
-    padding: 16,
+    paddingBottom: 16,
     paddingTop: 8,
   },
   headerTop: {
@@ -203,6 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
   searchbar: {
     flex: 1,
@@ -210,6 +231,7 @@ const styles = StyleSheet.create({
   },
   chipsContainer: {
     paddingBottom: 8,
+    paddingHorizontal: 16,
     gap: 8,
   },
   chip: {

@@ -4,38 +4,42 @@ import { Text, TextInput, Button, useTheme, Avatar } from 'react-native-paper';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 
+import { useUI } from '../../../src/context/UIContext';
+
 export default function PerfilScreen() {
   const theme = useTheme();
   const { user, updateProfile } = useAuth();
   const router = useRouter();
+  const { showError, showSuccess } = useUI();
 
   const [nombre, setNombre] = useState(user?.nombre || '');
   const [apellido, setApellido] = useState(user?.apellido || '');
   const [passwordActual, setPasswordActual] = useState('');
   const [passwordNueva, setPasswordNueva] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSave = async () => {
+    setError('');
     if (!nombre.trim() || !apellido.trim()) {
-      Alert.alert('Error', 'El nombre y apellido no pueden estar vacíos.');
+      setError('El nombre y apellido no pueden estar vacíos.');
       return;
     }
 
     if (passwordNueva && !passwordActual) {
-      Alert.alert('Faltan datos', 'Para cambiar tu contraseña, debes ingresar la contraseña actual.');
+      setError('Para cambiar tu contraseña, debes ingresar la contraseña actual.');
       return;
     }
 
     setLoading(true);
-    const { success, error } = await updateProfile(nombre, apellido, passwordActual || undefined, passwordNueva || undefined);
+    const { success, error: apiError } = await updateProfile(nombre, apellido, passwordActual || undefined, passwordNueva || undefined);
     setLoading(false);
 
     if (success) {
-      Alert.alert('Perfil actualizado', 'Tus datos se guardaron correctamente.', [
-        { text: 'OK', onPress: () => router.push('/explorar') }
-      ]);
+      showSuccess('Tus datos se guardaron correctamente.');
+      router.push('/explorar');
     } else {
-      Alert.alert('Error', error || 'No se pudo actualizar el perfil.');
+      showError(apiError || 'No se pudo actualizar el perfil.');
     }
   };
 
@@ -45,7 +49,7 @@ export default function PerfilScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Avatar.Text 
             size={80} 
@@ -94,6 +98,12 @@ export default function PerfilScreen() {
             secureTextEntry
             style={styles.input}
           />
+
+          {error ? (
+            <Text style={{ color: theme.colors.error, marginBottom: 16, textAlign: 'center' }}>
+              {error}
+            </Text>
+          ) : null}
 
           <Button 
             mode="contained" 

@@ -18,7 +18,8 @@ export class AuthService {
       throw new NotFoundError('No existe un usuario con ese email');
     }
 
-    if (!bcrypt.compareSync(password, usuario.password)) {
+    const match = await bcrypt.compare(password, usuario.password);
+    if (!match) {
       throw new UnauthorizedError('Contraseña incorrecta');
     }
 
@@ -42,7 +43,7 @@ export class AuthService {
       throw new ConflictError('Ya existe un usuario con ese email');
     }
 
-    const passwordHasheado = bcrypt.hashSync(password, 8);
+    const passwordHasheado = await bcrypt.hash(password, 8);
 
     const nuevoUsuario = new Usuario(
       getNextId('usuarios'),
@@ -64,30 +65,6 @@ export class AuthService {
     return { token, usuario: usuarioSinPassword };
   }
 
-  async updateProfile(userId, nombre, apellido, passwordActual, passwordNueva) {
-    const usuario = await usuarioRepository.findById(userId);
-    if (!usuario) {
-      throw new NotFoundError('Usuario no encontrado');
-    }
-
-    if (nombre) usuario.nombre = nombre;
-    if (apellido) usuario.apellido = apellido;
-
-    if (passwordNueva) {
-      if (!passwordActual) {
-        throw new BadRequestError('Debes ingresar tu contraseña actual para cambiarla');
-      }
-      if (!bcrypt.compareSync(passwordActual, usuario.password)) {
-        throw new UnauthorizedError('La contraseña actual es incorrecta');
-      }
-      usuario.password = bcrypt.hashSync(passwordNueva, 8);
-    }
-
-    await usuarioRepository.save(usuario);
-
-    const { password: _, ...usuarioSinPassword } = usuario;
-    return usuarioSinPassword;
-  }
 }
 
 export const authService = new AuthService();

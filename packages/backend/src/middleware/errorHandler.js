@@ -15,10 +15,11 @@ export function errorHandler(err, req, res, next) {
 
   // Manejo global de validaciones de Zod
   if (err.name === 'ZodError') {
+    const issues = err.issues || err.errors || JSON.parse(err.message);
     return res.status(400).json({
       status: 'fail',
       message: 'Error de validación de datos',
-      errors: err.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+      errors: issues.map(e => ({ path: e.path ? e.path.join('.') : 'campo', message: e.message })),
       timestamp: new Date().toISOString(),
     });
   }

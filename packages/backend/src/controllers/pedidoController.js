@@ -8,6 +8,7 @@ export async function listar(req, res, next) {
       req.usuario.id,
       req.query.rol,
       req.query.gigId,
+      req.query.estado,
       req.query.page,
       req.query.limit
     );

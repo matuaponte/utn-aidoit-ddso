@@ -5,7 +5,8 @@ import { BadRequestError, ForbiddenError } from '../errors/AppError.js';
 export const TRANSICIONES_VALIDAS = {
   [EstadoPedido.PENDIENTE]: [EstadoPedido.CONFIRMADO, EstadoPedido.CANCELADO],
   [EstadoPedido.CONFIRMADO]: [EstadoPedido.EN_REVISION, EstadoPedido.CANCELADO],
-  [EstadoPedido.EN_REVISION]: [EstadoPedido.ENTREGADO, EstadoPedido.CANCELADO],
+  [EstadoPedido.EN_REVISION]: [EstadoPedido.ENTREGADO, EstadoPedido.PENDIENTE_CAMBIOS, EstadoPedido.CANCELADO],
+  [EstadoPedido.PENDIENTE_CAMBIOS]: [EstadoPedido.EN_REVISION, EstadoPedido.CANCELADO],
   [EstadoPedido.ENTREGADO]: [],
   [EstadoPedido.CANCELADO]: [],
 };
