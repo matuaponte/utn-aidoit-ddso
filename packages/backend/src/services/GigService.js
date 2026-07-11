@@ -30,36 +30,15 @@ export class GigService {
   async crearGig(datos, vendedorId) {
     const { nombre, descripcion, categoriaId, paquetes, multimedia } = datos;
 
-    if (!nombre || !descripcion || !categoriaId) {
-      throw new BadRequestError('nombre, descripcion y categoriaId son obligatorios');
-    }
-
-    if (!paquetes || !Array.isArray(paquetes) || paquetes.length === 0) {
-      throw new BadRequestError('Debe incluir al menos un paquete');
-    }
-
     const categoria = await categoriaRepository.findById(parseInt(categoriaId));
     if (!categoria) {
       throw new NotFoundError('Categoría no encontrada');
     }
 
-    const nuevoGig = new Gig(
-      getNextId('gigs'),
-      nombre,
-      descripcion,
-      parseInt(categoriaId),
-      vendedorId
-    );
+    const nuevoGig = new Gig(getNextId('gigs'),nombre,descripcion,parseInt(categoriaId),vendedorId);
 
-    // Enriquecemos con los métodos del dominio
     for (const paq of paquetes) {
-      nuevoGig.agregarPaquete(new Paquete(
-        getNextId('paquetes'),
-        paq.nombre,
-        paq.descripcion,
-        paq.precio,
-        paq.diasEntrega
-      ));
+      nuevoGig.agregarPaquete(new Paquete(getNextId('paquetes'),paq.nombre,paq.descripcion,paq.precio,paq.diasEntrega));
     }
 
     if (multimedia && Array.isArray(multimedia)) {
@@ -67,10 +46,9 @@ export class GigService {
     }
 
     await gigRepository.save(nuevoGig);
-    return await this.#_construirGigDTO(nuevoGig);
+    return await this.#_construirGigDTO(nuevoGig); //Para simular una populacion
   }
 
-  // --- Subdominio: Paquetes y Multimedia ---
 
   async agregarPaquete(gigId, datosPaquete, vendedorId) {
     const gig = await gigRepository.findById(parseInt(gigId));

@@ -25,7 +25,7 @@ function resolveBaseURL() {
   }
   // Para que funcione en un iPhone físico o cualquier otro dispositivo en la red WiFi o tethering,
   // necesitamos usar la IP local de la computadora en lugar de localhost.
-  return 'http://172.20.10.10:3000/api';
+  return 'http://192.168.0.5:3000/api';
 }
 
 const apiClient = axios.create({
