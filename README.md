@@ -61,8 +61,8 @@ Desarrollado bajo el paradigma **Standalone Client** (cliente pesado independien
 
 - **Arquitectura de Vistas Reactivas:** Flujo unidireccional de datos con TanStack React Query y Hooks personalizados (`useGigs`, `usePedidos`, `useOpiniones`).
 - **Navegación Móvil:** Sistema de rutas dinámicas tipo SPA provisto por **Expo Router** (file-based routing con pantallas modales y pestañas principales `(tabs)`).
-- **Accesibilidad Accesible (WCAG AA):**
-  - Contraste cromatico optimizado para visibilidad en exteriores y modos oscuros/claros.
+- **Accesibilidad (WCAG AA Compliance):**
+  - Contraste cromático optimizado para visibilidad en exteriores y modos oscuros/claros.
   - Etiquetas explicativas `accessibilityLabel`, `accessibilityHint` y `accessibilityRole` en todos los componentes interactivos y botones táctiles.
   - Control explícito de foco mediante refs dinámicas para lectores de pantalla.
   - Ausencia de etiquetas HTML (cumplimiento de React Native puro: `<View>`, `<Text>`, `<TouchableOpacity>`, `StyleSheet`).
@@ -192,22 +192,15 @@ curl -X POST http://localhost:3000/api/pedidos \
 Para subir este proyecto a tu cuenta personal de GitHub conservando **todo el historial completo de commits y autores**, seguí estos pasos en tu terminal:
 
 1. **Creá un nuevo repositorio vacío en GitHub:**  
-   Ejemplo: `https://github.com/matuaponte/utn-ddso-aidoit.git`
+   Ejemplo: `https://github.com/matuaponte/utn-aidoit-ddso.git`
 
-2. **Renombrá el remoto original de la facultad:**
+2. **Configurá la dirección remota:**
    ```bash
-   git remote rename origin utn-origin
+   git remote set-url origin https://github.com/matuaponte/utn-aidoit-ddso.git
    ```
 
-3. **Agregá tu nuevo repositorio personal como `origin`:**
+3. **Publicá todo el historial en tu repositorio personal:**
    ```bash
-   git remote add origin https://github.com/matuaponte/utn-ddso-aidoit.git
-   ```
-
-4. **Publicá todo el historial en tu repositorio personal:**
-   ```bash
-   git push -u origin develop --tags
-   # O si utilizás la rama main:
    git branch -M main
    git push -u origin main --tags
    ```
@@ -218,4 +211,4 @@ Para subir este proyecto a tu cuenta personal de GitHub conservando **todo el hi
 
 - **Estudiante:** Matias Aponte
 - **Materia:** Desarrollo de Software (UTN FRBA)
-- **Año:** 2025 / 2026
+- **Año:** 2026
