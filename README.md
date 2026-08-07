@@ -1,4 +1,4 @@
-# [AI Do It 🚀 — Plataforma Mobile de Servicios Freelance —](https://github.com/matuaponte/utn-aidoit-ddso/blob/main/%5BDDS%20UTN%5D%20Trabajo%20Pr%C3%A1ctico%20Individual%20de%20Desarrollo%20con%20IA%20-%201C%202026%20-%20P%C3%BAblico.pdf)
+# [AI Do It 🚀 —Plataforma Mobile de Servicios Freelance—](https://github.com/matuaponte/utn-aidoit-ddso/blob/main/%5BDDS%20UTN%5D%20Trabajo%20Pr%C3%A1ctico%20Individual%20de%20Desarrollo%20con%20IA%20-%201C%202026%20-%20P%C3%BAblico.pdf)
 
 > **Trabajo Práctico Individual — Desarrollo de Software (UTN FRBA)**  
 > **Arquitectura:** Cliente-Servidor (Standalone Mobile Paradigm + Node.js Express Backend Multicapa)  
