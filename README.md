@@ -1,4 +1,4 @@
-# AI Do It 🚀 — Plataforma Mobile de Servicios Freelance
+# [AI Do It 🚀 — Plataforma Mobile de Servicios Freelance —](https://github.com/matuaponte/utn-aidoit-ddso/blob/main/%5BDDS%20UTN%5D%20Trabajo%20Pr%C3%A1ctico%20Individual%20de%20Desarrollo%20con%20IA%20-%201C%202026%20-%20P%C3%BAblico.pdf)
 
 > **Trabajo Práctico Individual — Desarrollo de Software (UTN FRBA)**  
 > **Arquitectura:** Cliente-Servidor (Standalone Mobile Paradigm + Node.js Express Backend Multicapa)  
@@ -10,6 +10,7 @@
 ## 📌 Descripción del Proyecto
 
 **AI Do It** es una aplicación móvil inspirada en plataformas como *Fiverr*, diseñada para la publicación, contratación y gestión transparente de servicios freelance ("Gigs"). La plataforma conecta dos roles fundamentales de usuario:
+
 
 - 👤 **Clientes:** Exploran catálogos de servicios, filtran por categorías y búsqueda textual, ordenan por precio/puntaje/fecha, contratan paquetes personalizados especificando requerimientos, mantienen chat en tiempo real dentro del pedido y valoran el trabajo finalizado mediante un sistema de reseñas y puntuación.
 - 🛠️ **Freelancers:** Crean y paquetizan sus servicios ofreciendo distintas escalas de alcance/precio (Básico, Estándar, Premium), gestionan el ciclo de vida de los pedidos recibidos, interactúan en el chat del pedido y realizan entregas finales.
