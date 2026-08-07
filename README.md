@@ -187,26 +187,6 @@ curl -X POST http://localhost:3000/api/pedidos \
 
 ---
 
-## 🚀 Publicación y Migración a GitHub Personal
-
-Para subir este proyecto a tu cuenta personal de GitHub conservando **todo el historial completo de commits y autores**, seguí estos pasos en tu terminal:
-
-1. **Creá un nuevo repositorio vacío en GitHub:**  
-   Ejemplo: `https://github.com/matuaponte/utn-aidoit-ddso.git`
-
-2. **Configurá la dirección remota:**
-   ```bash
-   git remote set-url origin https://github.com/matuaponte/utn-aidoit-ddso.git
-   ```
-
-3. **Publicá todo el historial en tu repositorio personal:**
-   ```bash
-   git branch -M main
-   git push -u origin main --tags
-   ```
-
----
-
 ## 👨‍💻 Autor y Universidad
 
 - **Estudiante:** Matias Aponte
